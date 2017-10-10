@@ -7,16 +7,21 @@ import java.util.regex.Pattern
 object ReplaceValuesWithNames {
 
   val regexs: List[Regex] = List(
-    Regex("\\{staged_dir(.*?)", "staged_dir(.*?)('|\"| )", "\\${staged_dir"),
-    Regex("\\{log_dir", "log_dir(.*?)('|\"| )", "\\${log_dir"),
-    Regex("\\{raw_dir", "raw_dir(.*?)('|\"| )", "\\${raw_dir")
+    Regex("\\{staged_dir(.*?)", "staged_dir(.*?)('|\"| |\\\\|\\|)", "\\${staged_dir"),
+    Regex("\\{log_dir", "log_dir(.*?)('|\"| |\\\\|\\|)", "\\${log_dir"),
+    Regex("\\{raw_dir", "raw_dir(.*?)('|\"| |\\\\|\\|)", "\\${raw_dir")
   )
+//  val regexs: List[Regex] = List(
+//    Regex("\\{staged_dir(.*?)", "staged_dir(.*?)('|\"| |\\\\|\\|)", "\\${staged_dir"),
+//    Regex("\\{log_dir", "log_dir(.*?)('|\"| |\\\\|\\|)", "\\${log_dir"),
+//    Regex("\\{raw_dir", "raw_dir(.*?)('|\"| |\\\\|\\|)", "\\${raw_dir")
+//  )
 
   def main(args: Array[String]) {
-    val files = Common.getAllFiles
+    val files = Common.getAllFiles()
 
     val fileAndVariables = files.map { file =>
-      println("\n\n\n\n\n\n\nFile: " + file)
+//      println("\n\n\n\n\n\n\nFile: " + file)
 
       val lines = Common.getInputFile(file).getLines().toList
 
@@ -27,8 +32,8 @@ object ReplaceValuesWithNames {
             val extractor2 = Pattern.compile(regex.patternToExtract).matcher(line)
             extractor2.find()
             val path = (regex.pathPrefix ++ extractor2.group(1)).trim
-            print(path + " : ")
-            val pathVariable = "a" //Console.readLine()
+//            print(path + " : ")
+            val pathVariable = path.replaceAll("/","_").replaceAll("}","").replaceAllLiterally("\\${","").replaceAll("-","_").replaceAllLiterally(".", "_").replaceAllLiterally("*", "").replaceAll("([a-z])([A-Z]+)","$1_$2").stripPrefix("_").stripSuffix("_").toLowerCase.replaceAll("staged_dir_","").replaceAll("raw_dir_","core_raw_")
             Some(Output(pathVariable, path))
           } else {
             None
@@ -39,20 +44,28 @@ object ReplaceValuesWithNames {
       (file, requiredVariables)
     }
 
-    fileAndVariables.foreach { case (file, variables) =>
-      val now = Calendar.getInstance().getTime().getTime.toString
-      val fileName = now + ".txt"
-        val lines = List(file) ++ variables.map(x => x.variableName + ": " + x.path)
-      Common.writeToOutputFile(lines, fileName)
-    }
+    val writableLines = fileAndVariables.flatMap { case (file, variables) =>
+      variables.map{x =>
+        val formattedPath = x.path.replaceAllLiterally("\\${","{{").replaceAllLiterally("}","}}")
+        x.variableName + ": \"" + formattedPath + "\""
+      }
+    }.toList
+
+    val now = Calendar.getInstance().getTime.getTime.toString
+    val fileName = now + ".txt"
+    Common.writeToOutputFile(writableLines.distinct, fileName)
 
     fileAndVariables.foreach { case (file, variables) =>
       val lines = Common.getInputFile(file).getLines().toList
       val finalLines = lines.map { line =>
         var result = line
         variables.foreach { variable =>
-          if (line.indexOf(variable.path) >= 0) {
-            result = line.replaceAllLiterally(variable.path, "\\${" + variable.variableName + "}")
+          val index = line.indexOf(variable.path)
+          if (index >= 0) {
+            val nextChar = line(index + variable.path.length)
+            if (nextChar == ' '|| nextChar == '"' || nextChar == '\'' || nextChar == '|' || nextChar == '\\') {
+              result = line.replaceAllLiterally(variable.path, "\\${" + variable.variableName + "}")
+            }
           }
         }
 

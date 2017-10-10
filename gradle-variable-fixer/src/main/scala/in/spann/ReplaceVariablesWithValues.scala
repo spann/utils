@@ -38,7 +38,7 @@ object ReplaceVariablesWithValues {
 
   def main(args: Array[String]) {
 
-    val files = Common.getAllFiles
+    val files = Common.getAllFiles()
     files.foreach(println)
 
     files.foreach { file =>

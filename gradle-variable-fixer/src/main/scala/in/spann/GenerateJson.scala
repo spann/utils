@@ -52,6 +52,9 @@ object GenerateJson {
       fields(2).split(",").foreach { map =>
         val values = map.split('|')
 
+        if (values.size <= 1) {
+          println(fields)
+        }
         val (flow, path) = (values(0), values(1))
         newPathsMap.put(flow, path)
 
@@ -85,12 +88,12 @@ object GenerateJson {
       "skipJobs" -> new JSONArray(List(skipJobs)),
       "targetProject" -> targetProject,
       "flow" -> flow,
-      "mark_successful" -> markSuccessful
+      "markSuccessful" -> markSuccessful
       ))
     }
 
 
-    finalOutput.map(format(_)).map(_.replace("\\","")).foreach(println)
+    finalOutput.map(format(_)).map(_.replace("\\","")).map(_.replace("\n","")).foreach(println)
 
     println(finalOutput.size)
 

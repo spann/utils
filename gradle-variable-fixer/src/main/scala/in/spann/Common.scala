@@ -4,10 +4,10 @@ import java.io.File
 
 object Common {
 
-  val location = "/Users/tkmacgf/sunil/projects/bigdata-recommendation-engine"
+  val location = "/Users/tkmacgf/sunil/projects/dp"
   val filePattern = ".*.gradle$"
 
-  def getAllFiles: Seq[String] = {
+  def getAllFiles(location: String = location, filePattern: String = filePattern): Seq[String] = {
 
     def go(toCheck: List[File], results: List[File]): Seq[File] = toCheck match {
       case head :: tail =>

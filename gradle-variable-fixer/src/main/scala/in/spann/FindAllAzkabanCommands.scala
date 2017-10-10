@@ -7,7 +7,7 @@ object FindAllAzkabanCommands {
   var commands: List[String] = List()
 
   def main(args: Array[String]) {
-    val files = Common.getAllFiles
+    val files = Common.getAllFiles()
     files.foreach { file =>
       println("Processing file: " + file)
 
